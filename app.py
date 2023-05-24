@@ -113,6 +113,37 @@ def register():
 
 
 
+#Creating Login Form class, username,password and submission button
+class LoginForm(FlaskForm):
+    username = StringField("Username", validators=[InputRequired(), Length(min=4, max=20)])
+    password = PasswordField("Password", validators=[InputRequired(), Length(min=4, max=80)])
+    submit = SubmitField("Login")
+
+
+
+
+
+#Creating login URL route for app, will call login function everytime /login is accessed
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    #creating Login Form
+    form = LoginForm()
+    #if form is validated, then create a user object by searching for a user with username in form data in database
+    #Creating SQL query which will either return a 'User' or 'None'
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+
+        if user:
+            if check_password_hash(user.password, form.password.data):
+                login_user(user)
+                return "You are now logged in!"
+            else:
+                return "Password is incorrect"
+        else:
+            return "Username does not exist"
+
+    return render_template('login.html', form=form)
+
 #Testing
 
 
