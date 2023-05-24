@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+
+
+{%  block content %}
+<h1>Register</h1>
+
+<form method="POST">
+
+{#
+The form.hidden() is from Flask-WTF, which generates and checks CSFR tolens, it protects against CSRF attacks
+as the tokens will ensure form submissions come from web application and not an external source
+
+ Cross-Site Request Forgery (CSRF) is an attack that tricks the victim into submitting a malicious request.
+ It uses the identity and privileges of the victim to perform an undesired function on their behalf.
+#}
+ {{ form.hidden_tag() }}
+    {{ form.username.label }} {{ form.username(size=20) }}
+    {{ form.password.label }} {{ form.password(size=35) }}
+    {{ form.submit() }}
+
+  </form>
+
+{% endblock %}
