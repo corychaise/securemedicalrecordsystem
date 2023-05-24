@@ -1,8 +1,14 @@
 
 # importing Flask module as this will be used to  create a flask web server
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy #SQLALchemy will make it easy to develop an SQL database and help create RBAC for the app
 from flask_login import UserMixin, LoginManager #Provides user session management; logging in/out and authetnication
+from flask_wtf import FlaskForm #Flask_form will create forms and  handle validation
+from wtforms import StringField, PasswordField, SubmitField #will create fields for forms in web app and represent HTML code for web app
+from wtforms.validators import InputRequired, Length, ValidationError #Will validate forms
+from werkzeug.security import generate_password_hash
+from flask_login import login_user
+from werkzeug.security import check_password_hash
 #Login Manager will manage user logins
 #Flask web application will be represented by app.py; __name__ means the current file (which is app.py)
 app = Flask(__name__)
@@ -57,6 +63,54 @@ def load_user(user_id):
 #User.query.get is specific SQLAlchemy syntax to get an object by its primary keyl user_id
 #It will either return 'None' or the user object
 #It is getting converted to an int, as the database is expecting primary_key to be an integer
+
+
+
+
+
+
+
+
+#Class for Registeration Form
+#Each field 'username,password,submit is presented by an html field; Stringield creates an <input type="test>
+#Password field function will create a <input type="password"> html field
+#Submit Field creates a submit button field
+
+class RegisterForm(FlaskForm):
+    username = StringField("Username", validators=[InputRequired(), Length(min=4, max=20)])
+    password = PasswordField("Password", validators=[InputRequired(), Length(min=4, max=80)])
+    submit = SubmitField("Register")
+    #validate_username, function
+    def validate_username(self, username):
+        #This line is stating if there is an existing 'User' object in the database to set it to exist_user_usnerame
+        existing_user_username = User.query.filter_by(username=username.data).first()
+        #Python has a special object called 'None'; so existing_user_username will either be 'None' or a user object
+        #So if existing_user_username does exist, then raise a ValidationError
+        if existing_user_username:
+            raise ValidationError("That username already exists. Please choose a different one.")
+
+
+#app.route for URL '/register' for app; which will have HTTP get and POST for registering account
+#Trigger the register() function whenever /register is accessed
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    #Intiialize a new registration form
+    form = RegisterForm()
+    #Function will see if POST request has been made for form and if all form fields are valid
+    #The function will either turn True or False
+    #If the POST request has been made and fields are valid; create the user and add it to the database
+    #also return a string "New user has been created" as the HTTP response
+    if form.validate_on_submit():
+        #hashed_password; ensure password isn't stored in plain text
+        hashed_password = generate_password_hash(form.password.data, method='sha256')
+        new_user = User(username=form.username.data, password=hashed_password)
+        db.session.add(new_user) #adding user to current databa session
+        db.session.commit() #commits; writes session to database; adds user to database
+
+        return "New user has been created!" #will send back this response if user was added to db succesfully
+
+    return render_template('register.html', form=form) #if form was invalid, render register webpage along with render the form
+
 
 
 #Testing
