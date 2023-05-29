@@ -9,6 +9,7 @@ from wtforms.validators import InputRequired, Length, ValidationError #Will vali
 from werkzeug.security import generate_password_hash
 from flask_login import login_user
 from werkzeug.security import check_password_hash
+from flask import flash, redirect, url_for
 #Login Manager will manage user logins
 #Flask web application will be represented by app.py; __name__ means the current file (which is app.py)
 app = Flask(__name__)
@@ -92,6 +93,7 @@ class RegisterForm(FlaskForm):
 
 #app.route for URL '/register' for app; which will have HTTP get and POST for registering account
 #Trigger the register() function whenever /register is accessed
+#Decorator tells flask that the function immediately following shoild run if there is an HTTP GET or POST request for /register
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     #Intiialize a new registration form
@@ -106,10 +108,10 @@ def register():
         new_user = User(username=form.username.data, password=hashed_password)
         db.session.add(new_user) #adding user to current databa session
         db.session.commit() #commits; writes session to database; adds user to database
+        flash('Congratulations, you are now a registered user!') #flash message for successful registration
+        return redirect(url_for('login')) #will redirect user after successful registration to login route
 
-        return "New user has been created!" #will send back this response if user was added to db succesfully
-
-    return render_template('register.html', form=form) #if form was invalid, render register webpage along with render the form
+    return render_template('register.html', title='Register', form=form) #if form was invalid, render register webpage along with render the form
 
 
 
@@ -132,17 +134,26 @@ def login():
     #Creating SQL query which will either return a 'User' or 'None'
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
+        #If user was not found in database or if the password was not a match in the database
+        if user is None or not check_password_hash(user.password, form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        #If a user is found and password matched, a welcome message is flashed to user, stating their username
+        flash('Welcome, {}!'.format(user.username))
+        return redirect(url_for('index')) #redirect to index route
+    #If a GET request is made to '/login' or if form validation fails then the login webpage with the form is rendered
+    return render_template('login.html', title='Sign In', form=form)
 
-        if user:
-            if check_password_hash(user.password, form.password.data):
-                login_user(user)
-                return "You are now logged in!"
-            else:
-                return "Password is incorrect"
-        else:
-            return "Username does not exist"
 
-    return render_template('login.html', form=form)
+
+
+#if user navigates to root of application ('/') or if they navigate to ('/index') then the index() will be called
+@app.route('/')
+@app.route('/index')
+def index():
+    #returns object of rendered html template and an argument of title as 'Home'
+    return render_template('index.html', title='Home')
+
 
 #Testing
 

@@ -9,6 +9,16 @@
 
 
 <main>
+{# Displaying flashed messages based on userfeedback  #}
+{% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class=flashes>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
 {% block content %}
 {#Login and register templates are child templates that extend this base html, and will be rendered here#}
 {% endblock %}
